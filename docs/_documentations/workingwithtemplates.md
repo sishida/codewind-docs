@@ -2,101 +2,51 @@
 layout: docs
 title: Working with templates
 description: Working with templates
-keywords: template, project, projects, develop, development, language, languages, build, custom, layout, sample, dockerfile, docker, code, python, go, java, node, yaml, adding development languages, adding sample projects
+keywords: getting started, setting up, projects, update, help, Theia, test, edit, Theia editor, using own IDE, empty page, refresh, credentials, default editor, Node.js profiling support, code highlighting, JavaScript file, template source
 duration: 1 minute
 permalink: workingwithtemplates
 type: document
-order: 5
-parent: usingmicroclimate
+order: 8
+parent: usingcodewind
 ---
 
 # Working with templates
 
-Beginning with Microclimate Version 18.09, you can add more development languages and sample projects by adding Microclimate extensions, called templates. These templates appear as new language and project types within the Microclimate user interface. You can code and develop in languages of your choice and provide sample projects that are suited to your environment.
+Codewind gives you the flexibility to code and develop in languages of your choice by using templates. Templates make application development easier by providing a structure and boilerplate code, or framework, to help you start a new project. Templates appear as a new language and project type within the Codewind user interface. 
 
-Microclimate templates are stored in the `microclimate-workspace/.extensions` directory. Templates for Python and Go languages and for additional Java and Node.js sample projects are already included in Microclimate, and you can refer to those as examples.
+When you create a new project, you can choose from the default set of templates available in Codewind, or you can choose a template source of your own. You can add more development languages and sample projects by adding new templates. 
 
-You can create templates in one of two ways: you can create them using the template wizard, or you can create them manually. Using the wizard is easier if your project uses one of the supported languages, as shown in the following instructions.
+Codewind provides preconfigured, containerized project templates covering several languages, including [Node.js](https://nodejs.dev/), [Java](https://www.java.com/), [Python](https://www.python.org/), and [Swift](https://swift.org/), and several frameworks, such as [Express](https://expressjs.com/), [Spring Boot](https://spring.io/projects/spring-boot), and [Open Liberty](https://openliberty.io/). [Quickly create and deploy microservices](https://www.youtube.com/watch?v=zKMggp10gq4&t=12s) in languages and frameworks that you're familiar with. You can easily modify these preconfigured projects to develop your customized microservices.
 
-## Prerequisites
-- You need your sample project code, either on your local disk or in a public GitHub repository.
-- The sample must include a Dockerfile, and you must be able to build and run it in Docker.
+## Managing templates
 
-## Creating a template using the template wizard
+Template management in Codewind is provided by the **Template Source Manager**. To open the **Template Source Manager**, right-click a Codewind connection, then **Manage Template Sources**. The **Template Source Manager** appears. 
 
-To create a template using the wizard:
+- **Note:** **Template Source Manager** is the name used in VS Code. Eclipse uses the name **Manage Template Sources**.
 
-1. In the Microclimate header, click **Templates**.
-2. Click **Create a new template**.
-3. Enter a unique name and a description for the template.
-4. If you have one or more compatible projects in your workspace, complete the following steps to create the template from one of those projects:
-- Select the **Existing local project** radio button.
-- Select the project from which you want to create the template.
-- Click **Create**.
-5. Alternatively, complete the following steps to create a template from a public Git repository:
-- Select the **Public Git repository URL** radio button.
-- Enter the repository URL, for example, `https://github.com/username/reponame`.
-- Change the **Branch** value if necessary.
-- Select the **Language**. Options available are Java, Node.js, Swift, Python, and Go. If your project uses a different language, [create the template manually](#creating-a-template-manually).
-- A **Build type** is selected for you based on the chosen language. Select a different build type if necessary.
-- A default **Application port** value is entered for you based on the chosen build type. Enter a different value if necessary.
-- Click **Create**.
+Codewind templates are stored in the [codewind-resources/codewind-templates](https://github.com/codewind-resources/codewind-templates)
+GitHub repository. Three examples are included in Codewind for your reference: 
+* Standard Codewind Templates.
+* Default templates from Kabanero Collections.
+* Appsody Stacks to develop applications with sharable technology stacks. 
 
-## Creating a template manually
+Use the **Template Source Manager** to perform the following actions:
 
-To make your own template:
+1. To add a new template source to the table, click **Add New**. For more information, see [Adding your template sources to Codewind](#adding-your-template-sources-to-codewind).
+2. **VSCode:** To remove non-default template sources, click the trash icon. 
+   **Eclipse:** To remove non-default template sources, first make sure you are in the **Manage Template Sources** wizard. Select the non-default templates you want to remove. Then click the **Remove** button.
+3. **VSCode:** Toggle the **Enabled** slide to **On** so template source templates appear in the **Create Project** wizard. 
+   **Eclipse:** In the Manage Template Sources wizard, check the check boxes for the template sources you want to enable. Once done, click the OK button. You should see a notification in the bottom right saying **Updating Template Sources: (0%)**. Once that message disappears, it has successfully set your preferred template sources. 
+   * Use template sources to add style projects to Codewind. 
+   * For example, before adding an Appsody project, enable at least one Appsody-style template source. 
+4. **VSCode:** To disable a set of templates so they do not appear in the **Create Project** wizard, toggle the **Enabled** slide to **Off**.
+   **Eclipse:** In the Manage Template Sources, simply uncheck the template sources you want to disable, and then click OK. 
 
-1. Create a `microclimate.yaml` file to provide the specification for your sample project. See the [format specification of the microclimate.yaml file](#format-specification-of-the-microclimateyaml-file) along with the example.
+## Adding your template sources to Codewind
 
-2. Your `microclimate.yaml` file needs to be placed in a new directory within the `microclimate-workspace/.extensions` directory.
-  * The directory name must match the value you provide for the `extensionID` field in your `microclimate.yaml` file.
-  * If you are providing sample project code from your local disk rather than in a GitHub repository, include the project code in the same directory. In the `microclimate.yaml` file, set the `localpath` value with a period.
-
-3. If you are running Microclimate in IBM Cloud Private, you can use `kubectl` to upload your template directory, which contains `microclimate.yaml`:
-
-`kubectl cp <your template directory> <namespace>/<ibm-microclimate pod>:microclimate-workspace/<icp-username>/.extensions`
-
-**Note:**
-- The `<your-template-directory>` directory must end in a forward slash (/) so that the `kubectl` command performs a recursive directory copy.
-- The `extensions` directory in the root of the file system for the `ibm-microclimate` pod contains only the templates that Microclimate supplies. Place your new template in the `microclimate-workspace/<icp-username>/.extensions` directory as previously described.
-- In addition to the provided language options, you can type in your own language. The manually added language will then be included as an option in the template wizard.
-
-4. If you are running in a local installation, restart Microclimate. If you are running in IBM Cloud Private, restart the `ibm-microclimate` pod. After you restart, your template appears as a selectable project type when you create a new project.
-
-## Format specification of the microclimate.yaml file
-The following code is an example `microclimate.yaml` file for the [Go language template](https://github.com/microclimate-dev2ops/microclimateGoTemplate) as supplied in the `microclimate-workspace/.extensions/templateGoExample` directory.
-```yaml
-# extensionId must match the directory name, repository name, and chart/ directory
-extensionId: templateGoExample
-buildType: docker
-# Project language to display in the Microclimate UI
-language: go
-# Must be "template"
-creationType: template
-info:
-  # Customize these to your liking
-  provider: IBM
-  version: 0.0.1
-userInterface:
-  # Template label to display in the Microclimate UI
-  label: Go sample template
-  # Description of the template project
-  description: Sample microservice for simple Go app
-template:
-  # Link to the GitHub repo, if your source is in GitHub
-  giturl: https://github.com/microclimate-dev2ops/microclimateGoTemplate
-  # Git branch to clone new projects from
-  gitbranch: master
-  # Path to your project's root directory relative to this file
-  # Ignored if giturl and gitbranch are set above
-  localpath: .
-application:
-  # Application's HTTP port
-  port: 8000
-  # The application'  s "root path", default is "/"
-  # Microclimate will ping this endpoint to determine when your app is running
-  contextroot: /my-root-endpoint
-```
-
-## Limitations
-Monitoring is unavailable for projects created from a template.
+Add your template sources to use Codewind with the framework of your choice. 
+1. Ensure your template source has an `index.json` file containing information about your new templates. Follow the same format as the `index.json` file found in [https://github.com/kabanero-io/codewind-templates/blob/master/devfiles/index.json](https://github.com/kabanero-io/codewind-templates/blob/master/devfiles/index.json).
+2. **VSCode:** In the **Template Source Manager**, click **Add New**. 
+   **Eclipse:** Right click on the connection in the Codewind Explorer view, and select **Manage Template Sources...**. Once the **Manage Template Sources** wizard pops up, click **Add...**.
+3. **VSCode:** Enter the URL to your template source's index file and click `Enter` to confirm.
+   **Eclipse:** Fill in the fields for URL, Name, and Description. Click the **OK** button once you are finished.

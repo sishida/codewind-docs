@@ -7,27 +7,58 @@ $(function() {
         });
     });
     
+    var location = window.location;
+    var pathname = location.pathname.substring(location.pathname.lastIndexOf('/') + 1);
+
     
-    $('a[href^="#"]').not('.list-group-item').on("click", function(e) {
-    	
-    		e.preventDefault();
-    		var id = $($(this).attr('href'));
-       
-        if (id.length === 0) {
-            return;
+    var clicked = false;
+    $(':not(a[data-url=""])').each ( function() {
+        
+        if ($(this).data('url') == pathname) {
+        		clicked = true;
+            $(this).trigger("click");
         }
         
-        var pos = id.offset().top - 131;
-
-        // animated top scrolling
-        $('body, html').animate({scrollTop: pos});
-    });  
+    });
     
-    $("a").each( function() {
-    		var url = $(this).attr("href");
-    		if ( url  && !url.includes("#") && !url.startsWith("mailto:") && -1 == url.indexOf("://") &&
-    				!url.endsWith(".html")  && !url.endsWith("/") ) {
-    			$(this).attr("href", url + ".html");
-    		}
-    })
+    $(':not(a[data-url=""])').on("click", function(e) {
+
+		if ($(this).data("url") && !clicked) {
+			window.location.replace($(this).data("url"));
+		}
+	});
+    
+	$('a[href^="#"]').not('.list-group-item').on("click", function(e) {
+	    	
+			e.preventDefault();
+			var id = $($(this).attr('href'));
+	   
+	    if (id.length === 0) {
+	        return;
+	    }
+	    
+	    var pos = id.offset().top - 131;
+	
+	    // animated top scrolling
+	    $('body, html').animate({scrollTop: pos});
+    });  
+	
+	activeOSInstruction();
+   
 });
+
+function detectOS() {
+	var os="windows";
+	if (navigator.appVersion.indexOf("Mac")!=-1) os="mac";
+	if (navigator.appVersion.indexOf("X11")!=-1) os="linux";
+	if (navigator.appVersion.indexOf("Linux")!=-1) os="linux";
+	return os;
+}
+
+function activeOSInstruction() {
+	var os = detectOS();
+	$(".cw-tab-link").removeClass("active");
+	$(".cw-tab-pane").removeClass("active");
+	$('.cw-tab-link[data-os="'+os+'"]').addClass('active');
+	$('.cw-tab-pane[data-os="'+os+'"]').addClass('active');
+}

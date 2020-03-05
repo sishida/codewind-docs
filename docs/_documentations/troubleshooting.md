@@ -16,17 +16,20 @@ parent: root
 The following sections contain workarounds for issues that you might encounter when you use Codewind. If you don't see your issue here, please check our [GitHub repository](https://github.com/eclipse/codewind/issues). If you still don't see your issue, you can open a new issue in the repository.
 
 * [Installing Codewind](#installing-codewind)
-* [Creating a new project](#creating-a-new-project)
+* [Creating a project](#creating-a-project)
 * [Importing a project](#importing-a-project)
 * [Understanding Application Metrics](#understanding-application-metrics)
 * [Checking the application and build statuses](#checking-the-application-and-build-statuses)
 * [Editing your project](#editing-your-project)
 * [Disabling development on specific projects](#disabling-development-on-specific-projects)
-
-<!-- Provide an upfront link to where users can go if they can't figure out how to troubleshoot the problems. Avoid telling them to call IBM support, but you can link to the support website. -->
+* [Appsody with Codewind](#appsody-with-codewind)
+* [OpenShift Do (odo) with Codewind](#openshift-do-(odo)-with-codewind)
+* [OKD and OpenShift](#okd-and-openshift)
+* [Codewind and Tekton pipelines](#codewind-and-tekton-pipelines)
+* [OpenAPI tools](#openapi-tools)
+* [Setting Codewind server log levels](#setting-codewind-server-log-levels)
 
 ***
-
 # Installing Codewind
 
 <!--
@@ -38,10 +41,11 @@ Issue links: https://github.com/docker/for-win/issues/1560, https://github.com/e
 
 ## Installer fails with mount issues on Windows
 If you try to install Codewind on Windows 10 and use Docker, you might see the following error:
-```
-ERROR: for codewind-performance  Cannot start service codewind-performance: b"error while creating mount source path '/host_mnt/c/codewind-workspace': mkdir /host_mnt/c: file exists"
 
-ERROR: for codewind-performance  Cannot start service codewind-performance: b"error while creating mount source path '/host_mnt/c/codewind-workspace': mkdir /host_mnt/c: file exists"
+```sh
+ERROR: for codewind-performance  Cannot start service codewind-performance: b"error while creating mount source path '/host_mnt/c/codewind-data': mkdir /host_mnt/c: file exists"
+
+ERROR: for codewind-performance  Cannot start service codewind-performance: b"error while creating mount source path '/host_mnt/c/codewind-data': mkdir /host_mnt/c: file exists"
 Encountered errors while bringing up the project.
 ```
 
@@ -57,7 +61,7 @@ If the command and another installation attempt don't succeed, complete the foll
 For more information, see [this issue about Docker mounts on Windows](https://github.com/docker/for-win/issues/1560).
 
 <!--
-Action/Topic : Installing Codewind
+Action/Topic: Installing Codewind
 Issue type: bug/info
 Issue link:
 18.10:
@@ -71,31 +75,167 @@ When using OS authentication setups (for example, AzureAD), Docker Shared Drive 
 3. Select your new local account and click **Change account type**. Select the dropdown menu and select **Administrator**. Share the drive again in Docker.
 
 <!--
-Action/Topic : Installing Codewind
+Action/Topic: Installing Codewind
 Issue type: bug/info
-Issue link:
-18.10:
+Issue link: https://github.com/eclipse/codewind/issues/436
+0.6.0: Still present
 -->
-## Unable to create multiple Codewind workspaces on Docker Desktop Kubernetes
-When running a Docker Desktop local Kubernetes cluster, multiple Codewind workspaces may fail to start.
+## Error appears after installing or updating Codewind
+After you install or update Codewind, an error might appear when you try to start Codewind.
 
 **Workaround:**
-Use only one Codewind Che workspace on Docker Desktop for the time being, or use an alternative local Kubernetes cluster such as Minikube or Minishift. Due to how Docker Desktop handles networking, multiple Codewind workspaces may cause a collision on the port that it's running on.
+Remove the Codewind Docker images with your IDE:
+1. Stop Codewind.
+2. Remove the Codewind Docker images.
+   - In VS Code, use the `Remove Codewind Images` command.
+   - In Eclipse, use the `Uninstall` action.
 
-***
-# Creating a new project
+If removing the images with the IDE fails, remove them with the Docker command line instead:
+1. Stop Codewind.
+2. Use `docker image ls` to identify the Codewind images.
+3. Then, enter `docker image rm` to remove them.
+
+If installing and starting Codewind still fails, you can use Docker system prune:<br>
+**Caution:** Docker system prune removes more than just the Codewind Docker images. It can potentially remove all of your images.
+1. Stop Codewind.
+2. Enter the `docker system prune -a` command.
+3. Carefully review the list of items that Docker system prune removes. Preserve any items that you want to keep.
+   - To preserve containers, start all the containers that you want to save.
+   - To preserve images, start a container from the images that you want to save.
+4. After you ensure the preservation of any necessary items that Docker system prune removes, enter `y` to continue.
 
 <!--
-Action/Topic: Creating a new project and/or Checking the application and build statuses
+Action/Topic: Installing Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/2239
+0.9.0: New
+-->
+## Cannot find Codewind in Marketplace when attempting to install in IntelliJ
+When attempting to install Codewind in IntelliJ, you cannot locate the Codewind plug-in in Marketplace, and if you verify the custom plug-in repository link, you get a `Connection failed` error message:
+
+![intellij install error](images/intellij/custom-plugin-repo-connection-failed-error.png)
+
+This error occurs because the custom plug-in repository link contains an additional space.
+
+**Workaround**
+Remove the extra space from the custom plug-in repository link. 
+
+***
+# Creating a project
+
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/477
+0.4.0: Issue still present
+-->
+## Project creation on macOS fails, and Codewind reports an error
+If creating a Codewind project on macOS fails, Codewind might report the `net/http: TLS handshake timeout` error. For a similar issue, see the report [Error "net/http: TLS handshake timeout"](https://discussions.agilebits.com/discussion/99219/error-net-http-tls-handshake-timeout).
+
+**Workaround**
+As noted in the report [Error "net/http: TLS handshake timeout"](https://discussions.agilebits.com/discussion/99219/error-net-http-tls-handshake-timeout), go to **Applications**>**Utilities**>**Keychain Access** and delete from the keychain the certificates that you no longer need. You might notice that some certificates are redundant. Then, restart Codewind.
+
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/829
+0.5.0: Issue still present
+-->
+## Project creation fails if a persistent volume (PV) is unavailable
+If you try to create a project on Codewind for Eclipse Che, errors might occur if a PV is unavailable for your cluster.
+
+**Workaround:** Run the `kubectl get pv` command to check that a PV is available for each project that you want to create.
+
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/2251
+0.10.0: Issue still present
+-->
+## Codewind unable to deploy projects on IBM Cloud Kubernetes Service (IKS) with Kubernetes 1.15 and earlier
+Codewind cannot deploy Codewind style projects with remote Codewind on IKS and Kubernetes 1.15 and earlier. The projects fail to deploy, and you see the following error:
+```
+Failed to pull image "<image>": rpc error: code = Unknown desc = failed to pull and unpack image "<image>": failed to unpack image on snapshotter overlayfs: failed to extract layer sha256:<hash>: mount callback failed on /var/lib/containerd/tmpmounts/containerd-mount799987480: archive/tar: invalid tar header: unknown
+```
+
+**Workaround:** Upgrade to the latest version of IKS. IKS clusters that run Kubernetes 1.16 and later run a later version of containerd and are not affected by this issue. 
+
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
 Issue type: bug/info
 Issue link:
-18.10:
+0.2.0: Issue still present
 -->
-## Projects created never start after installing Codewind
-Intermittently, after installing Codewind on Windows, projects can be created, but they never start and instead remain in the **Starting** state. A Docker issue for Windows exists where, although it shows a volume is mounted, it does not allow any writing to the volume. To check if this issue is present, verify that a `codewind-workspace` exists (in your $HOME directory on Mac/Linux, or the root of your C: directory on Windows) and verify you can see your project folders created within.
+## Codewind Che extension loses connectivity to the Codewind pod
+The Codewind Che extension might lose connectivity to the Codewind pod during a Lagom or Swift project build if you have multiple projects in the workspace for each runtime type. When this issue occurs, the project tree says **Disconnected**.
 
-**Workaround:** This issue can appear for many reasons, so you have many possible workarounds. First, open the `Docker`->`Settings`->`Shared Drives` directory to confirm that you have a shared drive. If you have one selected, unselect it, click **Apply**, and then try creating projects again. If you're still noticing the problem, and you're using an ID for the shared drive that is not your current user, check that the ID being used doesn't have an expired password that requires a password reset. Reset the password if necessary.
+**Workaround:** Refresh the projects list to have the tree repopulate. If the issue persists, refresh the webpage.
 
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
+Issue type: bug/info
+Codewind version: 0.5.0
+OS: Windows
+IDE extension version: 0.5.0
+IDE version: Eclipse 2019-09
+Issue link: https://github.com/eclipse/codewind/issues/715
+-->
+## Projects stuck in starting or stopped state
+You might occasionally see projects stuck in the `Starting` or `Stopped` state even though the container logs say the projects are up and running. This can happen when you create a number of projects, for example, using the default and Appsody templates with Codewind 0.5.0. 
+
+**Workaround** Manually rebuild the projects that are stuck in `Starting` or `Stopped` state. To do this: 
+1. In the **Codewind Explorer** view, right-click your project and select **Build**.
+2. Wait for the project state to return to **Running** or **Debugging** in the **Codewind Explorer** view.
+
+<!--
+Action/Topic: Checking the application status 
+Issue type: bug/info
+Codewind version: 0.9.0
+Issue link: https://github.com/eclipse/codewind/issues/1269
+-->
+## How to stop the app from continuously pinging 
+With all the stacks and templates Codewind offers, some template applications come with no server, like Appsody Node.js. The backend in PFE expects all applications to have a server. Thus, the backend continuously pings the port of the application retrieved from the application's container information. Since no server is available to ping on that port, the application times out and is stuck on `Starting`. 
+
+**Workaround** Disable the pinging of your application stuck on the `Starting` state:
+1. Edit the `.cw-settings` file under the application, and set the key `internalPort` to `-1`. 
+    - This key forces the application to stop, stops pinging the application, and bypasses the timeout error. 
+2. Once you implement the server into the application, resume the application ping and run it by setting `internalPort` to `""` for the default port of the container. Or you can choose a specific port you want to ping. 
+
+<!--
+Action/Topic: Checking the application status 
+Issue type: bug/info
+Codewind version: 0.9.0
+Issue link: https://github.com/eclipse/codewind/issues/1269
+-->
+## How to create a .cw-settings file if it does not exist
+Prior to the 0.9.0 release, non-Codewind stacks, like Appsody and OpenShift Do (odo), did not come with a .cw-settings. If you have a project from those stacks from a previous release, you need to create the .cw-settings file. The file must reside under the project root directory. 
+
+**Workaround** Create a template .cw-settings file with the following contents: 
+
+```
+{
+"contextRoot": "",
+"internalPort": "",
+"healthCheck": "",
+"isHttps": false,
+"ignoredPaths": [
+""
+]
+}
+```
+
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
+Issue type: bug/info
+Codewind version: 0.6.0
+Issue link: https://github.com/eclipse/codewind/issues/1039
+-->
+## Che and local projects build twice when you create a project
+If you are using Codewind on Eclipse and VS Code at the same time, local projects build twice during project creation, resulting in longer project creation time.
+
+**Workaround:** To reduce project creation time, do not use Codewind on Eclipse and Codewind on VS Code at the same time. Close either Eclipse or VS Code and then create your project.
+
+***
 # Importing a project
 
 <!--
@@ -106,12 +246,14 @@ Issue link:
 -->
 ## Imported project never builds or starts
 To view the status of the imported project, enter the following command:
-```
+
+```sh
 docker logs codewind-pfe
 ```
 
 **Workaround:** If you see the following messages, the imported project is likely not a valid Codewind project.
-```
+
+```sh
 build-log requested, no build log found for project <project name>
 build-log requested, no build log found for project <project name>
 build-log requested, no build log found for project <project name>
@@ -119,10 +261,18 @@ build-log requested, no build log found for project <project name>
 No containerId for running project <project name>
 ```
 
-For more information about valid Codewind projects, see [Imported projects and supported project types](importedprojects).
+<!--
+Action/Topic: Importing a project.
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/243
+18.10:
+-->
+## Adding an existing Open Liberty project fails to build because of missing files
+An Open Liberty project fails to build after it is added into Codewind with the **Add Existing Project** action, and the project fails to build because of missing files.
+
+**Workaround:** Bind the existing project again and click **No** followed by **Other** for the project type.
 
 ***
-
 # Understanding Application Metrics
 
 <!--
@@ -164,13 +314,15 @@ Issue type: bug
 Issue link: https://github.ibm.com/dev-ex/iterative-dev/issues/459
 18.10: Still an issue
 -->
-## Microprofile project gets updated twice upon file change
-If you modify files in Microprofile projects, sometimes the project gets double updates. You might see the application status changed from **Running** to **Stopped** twice. If you notice this status change, the default polling rate, which is 500 ms, is too short for the application monitor.
+## MicroProfile project gets updated twice upon file change
+If you modify files in MicroProfile projects, sometimes the project gets double updates. You might see the application status changed from **Running** to **Stopped** twice. If you notice this status change, the default polling rate, which is 500 ms, is too short for the application monitor.
 
 **Workaround:** Increase the polling rate in the `server.xml` file to 1000 ms or longer.
-```
+
+```xml
 <applicationMonitor pollingRate="1000ms" />
 ```
+
 ***
 # Editing your project
 
@@ -180,7 +332,7 @@ Issue type: bug
 Issue link: https://github.ibm.com/dev-ex/theia/issues/3
 18.10: Still an issue
 -->
-## Theia editor might not work correctly in Microsoft Edge
+## Che editor might not work correctly in Microsoft Edge
 Theia, the open source code editor used by Che, currently has limited support for Microsoft Edge. The Theia team is aware of the issue and is working to fix it.
 
 **Workaround:** Use a different web browser.
@@ -191,21 +343,21 @@ Issue type: bug/info
 Issue link:
 18.10:
 -->
-## New projects sometimes do not show in Theia hierarchy view
+## New projects sometimes do not show in Che hierarchy view
 Sometimes when a new project is created, it doesn't show up in the hierarchy view within Eclipse Che.
 
 **Workaround:** Refresh the page in the browser.
 
 <!--
-Action/Topic: Creating a new project and/or Checking the application and build statuses
+Action/Topic: Creating a project and/or Checking the application and build statuses
 Issue type: bug/info
 Issue link:
 18.10:
 -->
 ## Context Root / Application Endpoint not correct
-If you create or bind a project which has a context root set in `.cw-settings`, such as a project using the Lagom template, the context root is not picked up initially. This also happens after restarting Codewind.
+If you create or bind a project that has a context root set in `.cw-settings`, such as a project using the Lagom template, the context root is not picked up initially. This also happens after restarting Codewind.
 
-**Workaround** For Eclipse. add the context root to the URL in your browser. For example, the browser might open with `localhost:34567` instead of `localhost:34567/mycontextroot` so type `mycontextroot`. For VS Code and Theia, edit and save the `.cw-settings` file, and the context root updates.
+**Workaround** For Eclipse, add the context root to the URL in your browser. For example, the browser might open with `localhost:34567` instead of `localhost:34567/mycontextroot`, so type `mycontextroot`. For VS Code and Che, edit and save the `.cw-settings` file, and the context root updates.
 
 ***
 # Disabling development on specific projects
@@ -220,3 +372,300 @@ Issue link:
 If you turn off `auto build` for a Node.js project when you run Codewind locally, it has no effect. Changes you make to your code automatically start or restart a build even though `auto build` is disabled.
 
 ***
+# Appsody with Codewind
+
+<!--
+Action/Topic: Creating a project and/or Checking the application and build statuses
+Issue type: bug/info
+Issue link:
+18.10:
+-->
+## Projects created never start after installing Codewind
+Intermittently, after installing Codewind on Windows, projects can be created, but they never start and instead remain in the **Starting** state. A Docker issue for Windows exists where, although it shows a volume is mounted, it does not allow any writing to the volume. To check if this issue is present, verify that a `codewind-data` directory exists in the root of your `C:` drive on Windows and verify you can see your Appsody project folders created within.
+
+**Workaround:** This issue can appear for many reasons, so you have many possible workarounds. First, open the `Docker\Settings\Shared Drives` directory to confirm that your `C:` drive is selected. If it is not selected, select it, click **Apply**, and then try creating projects again. If you're still noticing the problem, and you're using an ID for the shared drive that is not your current user, check that the ID being used doesn't have an expired password that requires a password reset. Reset the password if necessary.
+
+<!--
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/498
+18.10:
+-->
+## Appsody and Docker Desktop on Windows 10
+When you use Appsody, configure Docker Desktop to access your `C:` drive that contains your `codewind-data` directory. In most cases, you can configure Docker with the same user as the user who develops applications with Appsody. However, if you use Windows 10 Enterprise secured with Azure Active Directory (AAD), the AAD user does not reside in the localhost and might not be accepted in the **Shared Drives** tab of the Docker Desktop **Settings** page, especially if the organization configured AAD to issue only PIN codes instead of user passwords.
+
+**Workaround** Complete the instructions in [Special notes about Appsody and Docker Desktop on Windows 10](https://github.com/gcharters/kabanero-dev-getting-started/blob/master/docker-windows-aad.md).
+
+<!--
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind-docs/issues/64
+18.10:
+-->
+## Node.js and Swift templates remain in the starting state
+The templates `Appsody Node.js template` and `Appsody Swift template` remain in the starting state by default because these templates do not have a server implemented, and therefore, its status cannot be detected. These templates do not have a server and are intended to help you implement your own server.
+
+**Workaround** To get the application into a **Started** state, use a server for the application. After the application has a server, Codewind can monitor the server, and the status turns to **Started** if the server is running. Alternatively, you can also temporarily [stop Codewind from continueously pinging the application](#how-to-stop-the-app-from-continuously-pinging).
+
+<!--
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind-docs/issues/64
+18.10:
+-->
+## An Unknown error appears on line one of the pom.xml file
+If you use an Eclipse IDE for Enterprise Developer EPP prior to version 2019.06, you might see an `Unknown` validation error in the `pom.xml` file.
+
+**Workaround** Switch to version 2019.06 or later, or see [Cannot import any project into Eclipse with maven-jar-plugin 3.1.2](https://bugs.eclipse.org/bugs/show_bug.cgi?id=547340).
+
+<!--
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind-docs/issues/64
+18.10:
+-->
+## Classpath warnings appear or the application classes are not on the classpath
+If you work with Appsody projects in Codewind for VS Code, you might encounter `Classpath is incomplete` warnings or notifications that application classes are not on the classpath.
+
+**Workaround** Add the project's parent folder to the VS Code workspace. 
+1. After you create an Appsody Java MicroProfile project, right-click and `Add Project to Workspace` if it is not already added. 
+2. Right-click on the project from the workspace view and select **Add Folder to Workspace...** and choose the parent folder of the project. Click `Add`. 
+3. Choose the project folder and click **Add**.
+
+<!--
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind-docs/issues/64 and https://github.com/eclipse/codewind/issues/239
+18.10:
+-->
+## Starting in debug mode results in failure to attach the debugger
+If you work with Appsody projects in Codewind, and if you restart the project in debug mode, the first attempt to attach the debugger might fail.
+
+**Workaround** Run the `Attach Debugger` action manually. The following sample steps show instructions for VS Code. The steps to manually attach the debugger in other IDEs is similar:
+1. After you create a project, wait for VS Code to display the project's state as **Running**.
+2. Then, right-click the project and select **Restart in Debug Mode**.
+3. Allow the process to finish. It fails, and a connection exception window appears.
+4. The `Restarting <my_project> into debug mode` message is displayed. Wait for this restart notification to disappear.
+5. To manually set the debugger, click the **Debug** tab and then **Play**. The debugger is successfully attached to the project if `Debug <my_project>` is displayed in the message bar or if the project's state shows **Debugging**.
+
+<!--
+Codewind version: 0.6.0
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/1061
+-->
+## Appsody binds fail
+
+If an Appsody repository is already added in your local Appsody CLI, the Appsody bind might fail.
+
+These steps create the issue:
+1. The Appsody repository was added to your local Appsody CLI. The same Appsody repository was then added to Codewind from your IDE by right-clicking **Projects (Local)** and then clicking **Manage Template Sources**.
+2. Later, a project was bound to a stack from the added Appsody repository. The project appears in the Codewind Explorer view, and the `appsody.log` displays this error:
+```
+[Error] The current directory is not a valid appsody project. Run `appsody init <stack>` to create one. Run `appsody list` to see the available stacks.
+```
+Codewind displays an error. In VS Code, the error appears in the Codewind log:
+```
+2019/11/08 11:07:29 Please wait while the command runs... 
+2019/11/08 11:07:31 [Error] Repository 77b94c9b-0daf-5426-98b8-83eb8ee63e3c is not in configured list of repositories
+```
+
+**Workaround**
+1. Remove the repository from the local Appsody CLI. For example, run the `appsody repo remove` command.
+2. Remove and add the repository back into Codewind with **Manage Template Sources**.
+3. Rebind the project to Codewind.
+
+<!--
+Codewind version: 0.9.0
+Action/Topic: Appsody with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/938
+-->
+## Using Appsody stacks images from private Docker registries
+
+**Local scenario**
+For Codewind to work with an Appsody stack image on a private Docker registry, the stack must fully qualify the image name in the `.appsody-config.yaml` configuration of its template, for example: `hostname[:port]/username/reponame[:tag]`. Also, before you work with the stack, on the local system, enter `docker login` to the private registry.
+- **Note:** When you view the application log, you might see failures to pull the image during a rebuild. However, Codewind is taking the cached container image from your local machine. If you ever delete that image, you need to pull the image again. You can either create another project from the same stack or manually call a `docker pull` with the required image.
+
+**Remote scenario**
+Follow the instructions in [Adding a container registry in Codewind](che-setupregistries.html).
+
+***
+# OpenShift Do (odo) with Codewind
+
+For more information about the OpenShift Do (odo) extension in Codewind, see the [README](https://github.com/eclipse/codewind-odo-extension) file in the `codewind-odo-extension` repository.
+
+<!--
+Action/Topic: OpenShift Do (odo) with Codewind
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/1514
+-->
+## Building an odo project fails because of an existing image stream
+If you try to create an image stream that already exists in your cluster and then build an odo project, you might receive error messages in the build log:
+```
+Failed to create component with name <component name>. Please use odo config view to view settings used to create component. Error: imagestreams.image.openshift.io "<image stream name>" already exists unable to create ImageStream for <image stream name>
+```
+
+**Workaround:**
+1. Run `kubectl get is` to get the existing image stream.
+2. Run `kubectl delete is <existing image stream name>` to manually delete the existing image stream.
+
+***
+# OKD and OpenShift
+<!--
+Codewind version: 0.5.0
+OS: RHEL
+Che version: 7.2.0
+IDE extension version: 0.5.0
+IDE version: 7.1.0
+Kubernetes cluster: OKD/OpenShift
+Action/Topic: 
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/733
+-->
+## Plugin runtime crashes unexpectedly and all plugins are not working
+With the latest Eclipse Che Version 7.2, you might see the following error when your user session expires for the Eclipse Che workspace: `Plugin runtime crashed unexpectedly, all plugins are not working, please reload ...`
+
+These steps reproduce the issue: 
+1. Install Eclipse Che on an OKD cluster.
+2. Create your Codewind workspace from this [devfile](https://raw.githubusercontent.com/eclipse/codewind-che-plugin/master/devfiles/0.5.0/devfile.yaml).
+3. After your session expires, you see a `Crash` message in the Codewind workspace.
+**Workaround** Go to the `Che workspace` dashboard, log out of the Che workspace, and then log back in to the Che workspace. Access the Codewind workspace. 
+
+<!--
+Codewind version: 0.8.0
+OS: RHEL
+Che version: 7.5.1
+IDE extension version: 0.8.0
+IDE version: 7.5.1
+Kubernetes cluster: Red Hat OpenShift on IBM Cloud
+Action/Topic: 
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/1806
+-->
+## Che sometimes fails to reinstall successfully on Red Hat OpenShift on IBM Cloud
+Sometimes when Che is reinstalled on Red Hat OpenShift on IBM Cloud, the installation might fail with the following error:
+```
+ ✔ Create Che Cluster eclipse-che in namespace che...done.
+  ❯ ✅  Post installation checklist
+    ❯ PostgreSQL pod bootstrap
+      ✔ scheduling...done.
+      ✔ downloading images...done.
+      ✖ starting
+        → ERR_TIMEOUT: Timeout set to pod ready timeout 130000
+```
+
+This error appears because of permissions issues in the namespace.
+
+**Workaround:** To resolve the error, install Che into a namespace other than `che` with the `--chenamespace` flag when running `chectl server:start`.
+
+***
+# Codewind and Tekton Pipelines
+
+<!--
+Codewind version: 0.3
+Che version: 7.0
+IDE extension version: Theia plugin 0.3
+IDE version: Theia 7.0-rc4
+Action/Topic: Codewind and Tekton pipelines
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/309
+-->
+## Codewind cannot access the Tekton dashboard URL
+
+If you install Codewind before you install Tekton, Codewind cannot access the Tekton dashboard URL. In the logs, you see the following error message: 
+
+```sh
+Tekton dashboard does not appear to be installed on this cluster. Please install Tekton dashboard on your cluster, and restart your Codewind Che workspace. 
+```
+
+These steps reproduce the issue:
+1. Install Codewind on OpenShift.
+2. Install Tekton Pipelines.
+3. Click **Open Tekton dashboard URL**. Codewind does not access the Tekton dashboard URL. 
+
+**Workaround:** 
+1. Go to the Eclipse Che workspace console.  
+2. Select your workspace and stop it. 
+3. After 2 minutes, start your workspace again. 
+4. Now, access the Tekton dashboard URL from the Codewind palette. 
+
+***
+# OpenAPI tools
+
+<!--
+Action/Topic: OpenAPI tools
+Issue type: bug/info
+Issue link: https://github.com/eclipse/codewind/issues/275
+Version: 2019-06 (4.12.0)
+Build ID: 20190614-1200
+-->
+## OpenAPI generation fails in Eclipse if the output path does not exist
+In Eclipse, OpenAPI generation fails if a path does not exist, and the wizard doesn't automatically create the folder tree hierarchy if the hierarchy doesn't already exist. 
+
+These steps reproduce the issue:
+1. Install the latest version of Codewind.
+2. Add a sample OpenAPI `.yaml` file.
+3. From the Project or Package Explorer views, right-click the project and select one of the generator actions in **OpenAPI Generate**. A dialog window appears.
+4. In the dialog window, if necessary, select the OpenAPI definition file by clicking the **Browse...** button.
+5. In the **Output folder** field, copy and paste a path or edit the path directly.
+6. Click **Finish**. The OpenAPI generator fails if the folder doesn't already exist.
+
+**Workaround:**
+For the VS Code extension, manually create the output folder before you start the OpenAPI generator wizard. In the wizard, you can also create the **Output folder** in the browse dialog. Ensure that the path points to a valid folder in the project.
+
+For post-client or post-server stub generation, use a separate output folder for code generation. Depending on the language and the generator type, the OpenAPI generator generates both source code files and build-related files. Some refactoring might be necessary. For example, move the generated source code to the proper source folder that already exists in the project. However, if your project is empty, the target output folder can be the root of the project, and you don’t need to do as much refactoring and merging. 
+
+For Eclipse, for Java-based code generators, the Open API wizards provide additional support to configure the project. It is recommended that the project's root folder is selected as the output folder of the generator so that `.java` files will be generated into the existing `src/main/java` and `src/test/java` folders. The wizard's default value of the output folder is the project's root folder. The wizard also performs some automatic configuration, including `pom.xml` file merging, and necessary updates to the project's classpath.
+
+<!--
+Action/Topic: Plugin execution validation error in the pom.xml file for Open API tools
+Issue type: bug
+Issue link: https://github.com/eclipse/codewind/issues/650
+0.5.0: New issue
+-->
+## Plugin execution validation error in the pom.xml file
+When generating a Java client or server stub into an existing Appsody or Codewind Liberty Microprofile project, you might see a plugin execution validation error in the `pom.xml` file:
+
+```sh
+Plugin execution not covered by lifecycle configuration: org.codehaus.mojo:aspectj-maven-plugin:1.0:compile (execution: default, phase: process-classes)
+```
+
+The build is successful even though the validator reports this issue. 
+
+**Workaround:** To resolve this in Eclipse, surround the plugins element under the `build` element of the `pom.xml` file with the `pluginManagement` element.
+
+```xml
+<build>
+    <pluginManagement>
+        <plugins>   
+        ...
+```
+
+The following workaround applies to Eclipse. Add the configuration element to the `pom.xml` file:
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>org.openapitools.OpenAPI2SpringBoot</mainClass>
+                </configuration>
+                ....             
+```
+
+***
+# Setting Codewind server log levels
+
+<!--
+Action/Topic: Setting Codewind server log levels
+Issue type: info
+Issue link: https://github.com/eclipse/codewind/issues/1251
+Info added in 0.10.0.
+-->
+## Assisting with problem determination by raising the default Codewind server log level
+To assist with problem determination, raise the default Codewind server log level to **Debug** or **Trace**. Use the `cwctl loglevels` command or follow the instructions for an IDE:
+- In Eclipse, enable support features in the Codewind preferences, then right-click the connection in the Codewind Explorer view and click **Codewind server log level**.
+- In VS Code, use the **Codewind: Set Codewind Server Logging Level** command in the Command Palette.
